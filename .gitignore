@@ -1,0 +1,18 @@
+.env
+__pycache__/
+*.pyc
+
+# Generated outputs and caches
+cache_manifest.json
+renamed_files_log.csv
+reports/
+
+# Local inventories and private image sets
+my_cards/
+processed_cards/
+optimized_inventory/
+audited_inventory/
+V_2_cards/
+
+# Local documents and exports
+*.pdf
