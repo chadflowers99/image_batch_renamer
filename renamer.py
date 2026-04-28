@@ -32,7 +32,20 @@ class BatchRenamer:
         text = re.sub(r"[^a-z0-9]+", "-", text)
         return text.strip("-") or "image"
 
-    def build_filename(self, src_path, slug, sequence, total, include_date=True):
+    def _reserve_unique_name(self, proposed_name, reserved_names):
+        """Returns a unique filename by suffixing -NN when needed."""
+        base, ext = os.path.splitext(proposed_name)
+        candidate = proposed_name
+        counter = 1
+
+        while candidate.lower() in reserved_names:
+            candidate = f"{base}-{counter:02d}{ext}"
+            counter += 1
+
+        reserved_names.add(candidate.lower())
+        return candidate
+
+    def build_filename(self, src_path, slug, sequence, total, include_date=True, date_stamp=None):
         ext = os.path.splitext(src_path)[1].lower()
         if ext not in self.SUPPORTED_EXTENSIONS:
             ext = ".jpg"
@@ -42,13 +55,16 @@ class BatchRenamer:
         parts = [safe_slug]
 
         if include_date:
-            mtime = os.path.getmtime(src_path)
-            parts.append(datetime.fromtimestamp(mtime).strftime("%Y-%m-%d"))
+            if date_stamp:
+                parts.append(date_stamp)
+            else:
+                mtime = os.path.getmtime(src_path)
+                parts.append(datetime.fromtimestamp(mtime).strftime("%Y-%m-%d"))
 
         parts.append(str(sequence).zfill(pad))
         return "-".join(parts) + ext
 
-    def rename_images(self, slug="sports-card", include_date=True, dry_run=False):
+    def rename_images(self, slug="sports-card", include_date=True, dry_run=False, batch_date=None):
         if not os.path.isdir(self.source_folder):
             print(f"Error: source folder not found: {self.source_folder}")
             return []
@@ -67,14 +83,30 @@ class BatchRenamer:
 
         total = len(files)
         results = []
+        run_date = (batch_date or datetime.now().strftime("%Y-%m-%d")) if include_date else None
+        reserved_names = set()
+
+        if os.path.isdir(self.output_folder):
+            reserved_names = {name.lower() for name in os.listdir(self.output_folder)}
 
         for seq, filename in enumerate(files, start=1):
             src_path = os.path.join(self.source_folder, filename)
-            new_name = self.build_filename(src_path, slug, seq, total, include_date=include_date)
+            proposed_name = self.build_filename(
+                src_path,
+                slug,
+                seq,
+                total,
+                include_date=include_date,
+                date_stamp=run_date,
+            )
+            new_name = self._reserve_unique_name(proposed_name, reserved_names)
             dst_path = os.path.join(self.output_folder, new_name)
 
             if dry_run:
-                print(f"[DRY RUN] {filename} -> {new_name}")
+                if new_name != proposed_name:
+                    print(f"[DRY RUN] {filename} -> {new_name} (collision resolved)")
+                else:
+                    print(f"[DRY RUN] {filename} -> {new_name}")
             else:
                 original_hash = self._get_hash(src_path)
                 shutil.copy2(src_path, dst_path)

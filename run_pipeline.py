@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 from renamer import BatchRenamer
 
 RAW_DIR = os.getenv("CARD_RAW_DIR", "my_cards")
@@ -8,18 +9,21 @@ RENAME_SLUG = os.getenv("RENAME_SLUG", "sports-card")
 INCLUDE_DATE = os.getenv("INCLUDE_DATE", "true").lower() == "true"
 RUN_LOG_CSV = os.getenv("RUN_LOG_CSV", "renamed_files_log.csv")
 REPORTS_DIR = os.getenv("REPORTS_DIR", "reports")
+BATCH_DATE = os.getenv("BATCH_DATE")
 
 
 def run():
     print("\n=== IMAGE RENAME PIPELINE ===\n")
 
     renamer = BatchRenamer(source_folder=RAW_DIR, output_folder=OUTPUT_DIR)
+    run_date = BATCH_DATE or datetime.now().strftime("%Y-%m-%d")
 
     print("Stage 1: Dry-run preview")
     preview = renamer.rename_images(
         slug=RENAME_SLUG,
         include_date=INCLUDE_DATE,
         dry_run=True,
+        batch_date=run_date,
     )
 
     if not preview:
@@ -31,6 +35,7 @@ def run():
         slug=RENAME_SLUG,
         include_date=INCLUDE_DATE,
         dry_run=False,
+        batch_date=run_date,
     )
 
     if not results:

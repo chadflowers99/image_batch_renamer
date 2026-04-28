@@ -21,18 +21,27 @@ This section shows a representative before-vs-after result so non-technical revi
 | Stage | Example Filename |
 |---|---|
 | Before | IMG_4837.JPG |
-| After | 2020_Panini_Prizm_LeBron_James_PSA10_001.jpg |
+| After | sports-card-2026-04-27-01.jpg |
 
 | Stage | Example Filename |
 |---|---|
 | Before | DSC10294.jpeg |
-| After | 2018_Topps_Update_Ronald_Acuna_Jr_US250_SGC9_002.jpg |
+| After | sports-card-2026-04-27-02.jpeg |
+
+The live renamer uses an audit-safe pattern of `slug-YYYY-MM-DD-sequence.ext`, so the output stays deterministic for a given batch date and processing order.
 
 ## Run
 
 Use the main entrypoint:
 
 python run_pipeline.py
+
+For reproducible batch naming in automated runs, you can set `BATCH_DATE` to override the default current-date stamp used in renamed files.
+
+PowerShell example:
+
+`$env:BATCH_DATE = "2026-04-27"`
+`python run_pipeline.py`
 
 ## Notes
 
