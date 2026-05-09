@@ -141,6 +141,39 @@ class BatchRenamer:
 
         return all_passed
 
+    def print_audit_table(self):
+        """Prints a formatted audit table with full filenames to stdout."""
+        if not self._integrity_log:
+            return False
+
+        rows = []
+        for src_path, (orig_hash, dst_path) in self._integrity_log.items():
+            new_hash = self._get_hash(dst_path) if os.path.exists(dst_path) else "MISSING"
+            status = "PASS" if orig_hash == new_hash else "FAIL"
+            rows.append({
+                "original": os.path.basename(src_path),
+                "new": os.path.basename(dst_path),
+                "orig_hash": orig_hash[:16],
+                "new_hash": new_hash[:16] if new_hash != "MISSING" else "MISSING",
+                "status": status,
+            })
+
+        # Calculate column widths
+        orig_width = max(len(r["original"]) for r in rows) if rows else 20
+        new_width = max(len(r["new"]) for r in rows) if rows else 30
+        orig_width = max(orig_width, len("Original Filename"))
+        new_width = max(new_width, len("New Filename"))
+
+        # Print header
+        print(f"  {' Original Filename':<{orig_width}} | {'New Filename':<{new_width}} | {'Status':<6}")
+        print(f"  {'-' * orig_width}-+-{'-' * new_width}-+-{'-' * 6}")
+
+        # Print rows
+        for row in rows:
+            print(f"  {row['original']:<{orig_width}} | {row['new']:<{new_width}} | {row['status']:<6}")
+
+        return True
+
     def create_audit_report(self, report_dir=None):
         if not self._integrity_log:
             print("Warning: no rename session to report.")
@@ -173,7 +206,7 @@ class BatchRenamer:
                     status,
                 ])
 
-        print(f"Audit report generated: {report_path}")
+        print(f"Audit report saved: {report_path}")
         return report_path
 
     def append_run_log(self, results, log_csv_path=RUN_LOG_CSV):
