@@ -53,7 +53,7 @@ def run():
         print("Integrity verification failed. Do not delete originals.")
         sys.exit(1)
 
-    print("\nStage 5: Audit verification")
+    print("\nStage 5: Audit report")
     print("=== AUDIT REPORT ===\n")
     renamer.print_audit_table()
     renamer.create_audit_report(report_dir=REPORTS_DIR)
